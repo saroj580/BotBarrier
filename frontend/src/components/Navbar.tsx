@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Shield, Menu, Sun, Moon, BarChart3, Home, Users, CreditCard, LogOut, UserCircle, History } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
-import { getAuth } from "@/lib/auth"; // Import getAuth
-import { logout } from "@/lib/api"; // Import logout from api.ts
+import { getAuth } from "@/lib/auth"; 
+import { logout } from "@/lib/api"; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +20,8 @@ const Navbar = () => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
-  const auth = getAuth(); // Get authentication status
-  const isLoggedIn = !!auth.accessToken; // Check if user is logged in
+  const auth = getAuth(); 
+  const isLoggedIn = !!auth.accessToken; 
 
   const navigation = [
     { name: "Home", href: "/", icon: Home },
@@ -47,15 +47,12 @@ const Navbar = () => {
     }
   };
 
-  const handleLogout = async () => { // Make the function async
+  const handleLogout = async () => {
     try {
-      await logout(); // Call the logout function from api.ts
-      window.location.href = "/login"; // Redirect to login page after successful logout
+      await logout(); 
+      window.location.href = "/login";
     } catch (error) {
       console.error("Logout failed:", error);
-      // Even if backend logout fails, ensure client-side tokens are cleared
-      // The logout() function from api.ts already calls clearAuth(), which should handle this.
-      // If there's an error, we still want to redirect to login to prevent perceived login state.
       window.location.href = "/login";
     }
   };
@@ -64,7 +61,6 @@ const Navbar = () => {
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="p-1 rounded-md bg-primary/10">
               <Shield className="h-6 w-6 text-primary" />

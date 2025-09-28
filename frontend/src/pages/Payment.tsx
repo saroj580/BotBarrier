@@ -25,26 +25,23 @@ import { useToast } from "@/hooks/use-toast";
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { getAuth } from "@/lib/auth";
 
-// Custom reCAPTCHA loader to handle origin mismatch
 const loadRecaptchaScript = () => {
   return new Promise((resolve, reject) => {
-    // Check if script already exists
     if (document.querySelector('script[src*="recaptcha"]')) {
       console.log('reCAPTCHA script already loaded');
       resolve(true);
       return;
     }
 
-    // Check if we're in development and handle origin mismatch
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
     if (isDevelopment) {
       console.log('Development environment detected, using fallback for reCAPTCHA');
-      resolve(false); // Return false to indicate we should use fallback
+      resolve(false); 
       return;
     }
     
-    // Additional check: if we're on a non-standard port, use fallback
+    
     const currentPort = window.location.port;
     if (currentPort && currentPort !== '80' && currentPort !== '443' && currentPort !== '3000' && currentPort !== '5173') {
       console.log(`Non-standard port detected (${currentPort}), using fallback for reCAPTCHA`);
@@ -64,14 +61,12 @@ const loadRecaptchaScript = () => {
     
     script.onerror = (error) => {
       console.error('Failed to load reCAPTCHA script:', error);
-      resolve(false); // Don't reject, just indicate fallback should be used
+      resolve(false); 
     };
     
     document.head.appendChild(script);
   });
 };
-
-// Add these ticket configurations at the top of the component
 const ticketTypes = {
   standard: {
     price: 50,
@@ -79,22 +74,19 @@ const ticketTypes = {
   },
   vip: {
     price: 100,
-    prefix: "VIP" // Changed from "VIP" to "PRM" to match schema example
+    prefix: "VIP" 
   },
   premium: {
     price: 150,
-    prefix: "PRM" // Changed from "PRM" to "VIP" to match schema example
+    prefix: "PRM" 
   }
 };
 
-// Add this validation function (not directly used in UI logic, but good for reference)
 const validateTicketId = (ticketId: string) => {
-  // Format: PREFIX-PLATFORMCODE-NUMBER (e.g., STD-TM-12345)
   const pattern = /^(STD|VIP|PRM)-(TM|EB|SH|SG|VS)-\d{5}$/;
   return pattern.test(ticketId);
 };
 
-// Add this mapping for platform codes
 const platformCodes: { [key: string]: string } = {
   ticketmaster: "TM",
   eventbrite: "EB",
@@ -103,17 +95,15 @@ const platformCodes: { [key: string]: string } = {
   vividseats: "VS",
 };
 
-// Function to generate a valid ticket ID
 const generateTicketId = (selectedTicketType: "standard" | "vip" | "premium", selectedPlatform: string) => {
   const prefix = ticketTypes[selectedTicketType].prefix;
   const platformCode = platformCodes[selectedPlatform];
-  if (!platformCode) return ""; // Return empty if platform code is not found
+  if (!platformCode) return ""; 
 
   const randomNumber = Math.floor(10000 + Math.random() * 90000); // Generate a random 5-digit number
   return `${prefix}-${platformCode}-${randomNumber}`;
 };
 
-// Update the PaymentData interface
 interface PaymentData {
   platform: string;
   ticketId: string;
@@ -135,7 +125,6 @@ function PaymentPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Check if we're in development mode or reCAPTCHA is not available
   const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   let executeRecaptcha: any = null;
   
@@ -143,7 +132,6 @@ function PaymentPage() {
     const recaptchaHook = useGoogleReCaptcha();
     executeRecaptcha = recaptchaHook?.executeRecaptcha;
   } catch (error) {
-    // reCAPTCHA provider not available, use fallback
     console.log('reCAPTCHA provider not available, using fallback mode');
   }
 
@@ -180,22 +168,19 @@ function PaymentPage() {
     { value: "google_pay", label: "Google Pay" }
   ];
 
-  // This useEffect will generate a new ticketId whenever platform or ticketType changes
   useEffect(() => {
     if (paymentData.platform && paymentData.ticketType) {
       const newTicketId = generateTicketId(paymentData.ticketType, paymentData.platform);
       setPaymentData(prev => ({ ...prev, ticketId: newTicketId }));
     }
-  }, [paymentData.platform, paymentData.ticketType]); // Re-run when platform or ticketType changes
+  }, [paymentData.platform, paymentData.ticketType]);
 
-  // Check reCAPTCHA readiness
   useEffect(() => {
     let retryCount = 0;
-    const maxRetries = 10; // Limit retries to prevent infinite loop
+    const maxRetries = 10; 
     
     const initializeRecaptcha = async () => {
       try {
-        // Try to load reCAPTCHA script manually
         const scriptLoaded = await loadRecaptchaScript();
         
         if (!scriptLoaded) {
@@ -204,7 +189,6 @@ function PaymentPage() {
           return;
         }
         
-        // Wait for reCAPTCHA to be ready with retry limit
         const checkRecaptcha = () => {
           if (executeRecaptcha) {
             setRecaptchaReady(true);
@@ -212,7 +196,7 @@ function PaymentPage() {
           } else if (retryCount < maxRetries) {
             retryCount++;
             console.log(`reCAPTCHA not ready yet, retrying... (${retryCount}/${maxRetries})`);
-            setTimeout(checkRecaptcha, 1000); // Increased delay
+            setTimeout(checkRecaptcha, 1000); 
           } else {
             console.warn('reCAPTCHA failed to load after maximum retries, using fallback');
             setRecaptchaReady(false);
@@ -228,20 +212,18 @@ function PaymentPage() {
 
     initializeRecaptcha();
     
-    // Add a timeout to prevent infinite checking
     const timeout = setTimeout(() => {
       if (!recaptchaReady) {
         console.warn('reCAPTCHA loading timeout, will use fallback if needed');
         setRecaptchaReady(false);
       }
-    }, 15000); // Increased timeout
+    }, 15000); 
     
     return () => {
       clearTimeout(timeout);
     };
-  }, [executeRecaptcha]); // Removed recaptchaReady from dependencies to prevent infinite loop
+  }, [executeRecaptcha]); 
 
-  // Debug bot detection state changes
   useEffect(() => {
     console.log("Bot detection state changed:", botDetection);
   }, [botDetection]);
@@ -272,7 +254,6 @@ function PaymentPage() {
     setLoading(true);
     setError("");
 
-    // Check if user is authenticated before proceeding
     const auth = getAuth();
     if (!auth.accessToken) {
       setError("Please log in to continue with payment");
@@ -288,9 +269,8 @@ function PaymentPage() {
     try {
       console.log("Sending payment data:", paymentData);
       const result = await initiatePayment(paymentData);
-      console.log("initiatePayment result:", result); // Add this log
+      console.log("initiatePayment result:", result); 
 
-      // Always set bot detection results if available
       if (result.botScore !== undefined) {
         setBotDetection({
           botScore: result.botScore,
@@ -316,8 +296,8 @@ function PaymentPage() {
           variant: "destructive"
         });
       } else if (result.reason === "medium_risk") {
-        console.log("Medium risk detected, setting verificationStep to captcha"); // Add this log
-        console.log("Bot detection result:", result); // Add detailed logging
+        console.log("Medium risk detected, setting verificationStep to captcha"); 
+        console.log("Bot detection result:", result);
         setPaymentStatus("verification_required");
         setVerificationStep("captcha");
         setTransactionId(result.transactionId);
@@ -349,10 +329,10 @@ function PaymentPage() {
   const handleVerification = async (step: string, passed: boolean, details?: any) => {
     if (!transactionId) return;
 
-    console.log(`handleVerification called with step: ${step}, passed: ${passed}`); // Add this log
-    console.log(`Current verificationStep: ${verificationStep}`); // Add this log
+    console.log(`handleVerification called with step: ${step}, passed: ${passed}`); 
+    console.log(`Current verificationStep: ${verificationStep}`); 
     setLoading(true);
-    console.log(`handleVerification: Loading set to true for step ${step}`); // Added log
+    console.log(`handleVerification: Loading set to true for step ${step}`); 
 
     try {
       const result = await processPayment(transactionId, {
@@ -380,7 +360,7 @@ function PaymentPage() {
       setError(err.response?.data?.message || "Verification failed");
     } finally {
       setLoading(false);
-      console.log(`handleVerification: Loading set to false for step ${step}`); // Added log
+      console.log(`handleVerification: Loading set to false for step ${step}`); 
     }
   };
 
@@ -388,11 +368,9 @@ function PaymentPage() {
     console.log('reCAPTCHA executeRecaptcha available:', !!executeRecaptcha);
     console.log('reCAPTCHA site key:', import.meta.env.VITE_RECAPTCHA_SITE_KEY);
     
-    // Check if we're in development environment
     const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
     if (!executeRecaptcha || isDevelopment) {
-      // Fallback: simulate captcha completion if reCAPTCHA is not available or in development
       console.log('reCAPTCHA not available or in development mode, using fallback simulation');
       toast({
         title: "Using Fallback Verification",
@@ -408,14 +386,12 @@ function PaymentPage() {
     try {
       setLoading(true);
       
-      // Add error handling for origin mismatch
       let token;
       try {
         token = await executeRecaptcha('payment');
       } catch (recaptchaError: any) {
         console.error('reCAPTCHA execution error:', recaptchaError);
         
-        // Check if it's an origin mismatch error
         if (recaptchaError.message?.includes('origins don\'t match') || 
             recaptchaError.message?.includes('origin') ||
             recaptchaError.toString().includes('origins don\'t match')) {
@@ -441,7 +417,6 @@ function PaymentPage() {
         return;
       }
 
-      // Verify the captcha with backend
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/captcha/verify`, {
         method: 'POST',
         headers: {
@@ -482,19 +457,16 @@ function PaymentPage() {
   };
 
   const simulatePhoneVerification = () => {
-    // Simulate phone verification
     handleVerification("phone_verification", true, { phoneVerified: true });
   };
 
   const simulateEmailVerification = () => {
-    // Simulate email verification
     handleVerification("email_verification", true, { emailVerified: true });
   };
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Secure Ticket Purchase</h1>
           <p className="text-muted-foreground">
@@ -503,7 +475,6 @@ function PaymentPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Payment Form */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -547,7 +518,7 @@ function PaymentPage() {
                   id="ticketId"
                   placeholder="Enter ticket ID"
                   value={paymentData.ticketId}
-                  readOnly // Make ticketId read-only as it's now auto-generated
+                  readOnly 
                 />
               </div>
 
@@ -559,7 +530,7 @@ function PaymentPage() {
                     setPaymentData(prev => ({
                       ...prev,
                       ticketType: value,
-                      amount: ticketTypes[value].price // Update amount based on ticket type
+                      amount: ticketTypes[value].price 
                     }));
                   }}
                 >
@@ -582,7 +553,7 @@ function PaymentPage() {
                   placeholder="0.00"
                   value={paymentData.amount || ""}
                   onChange={(e) => setPaymentData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                  readOnly // Make amount read-only as it's derived from ticketType
+                  readOnly 
                 />
               </div>
 
@@ -615,7 +586,6 @@ function PaymentPage() {
             </CardContent>
           </Card>
 
-          {/* Bot Detection Results */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -712,7 +682,6 @@ function PaymentPage() {
           </Card>
         </div>
 
-        {/* Verification Steps */}
         {verificationStep && (
           <Card>
             <CardHeader>

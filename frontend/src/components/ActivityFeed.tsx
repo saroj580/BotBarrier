@@ -25,7 +25,6 @@ const ActivityFeed = () => {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch initial security logs
   useEffect(() => {
     const fetchSecurityLogs = async () => {
       try {
@@ -35,7 +34,6 @@ const ActivityFeed = () => {
           return;
         }
 
-        // Use appropriate endpoint based on user role
         const endpoint = auth.user?.role === 'admin' ? '/admin/logs' : '/user/logs';
         const response = await api.get(endpoint, { 
           params: { limit: 20, sort: '-createdAt' } 
@@ -57,11 +55,9 @@ const ActivityFeed = () => {
         setEvents(logEvents);
       } catch (error) {
         console.error('Failed to fetch security logs:', error);
-        // If it's a 403 error, the user might not have permission
         if (error.response?.status === 403) {
           console.log('User does not have permission to view security logs');
         }
-        // Set some default events for demo
         setEvents(getDefaultEvents());
       } finally {
         setIsLoading(false);
@@ -71,7 +67,6 @@ const ActivityFeed = () => {
     fetchSecurityLogs();
   }, []);
 
-  // Real-time activity via Socket.io
   useEffect(() => {
     const socket: Socket = io(API_BASE, { transports: ["websocket"] });
     
@@ -110,7 +105,6 @@ const ActivityFeed = () => {
     };
   }, []);
 
-  // Helper functions
   const formatCurrency = (amount: number | string, currency: string = 'USD'): string => {
     if (amount === 'N/A' || amount === null || amount === undefined) return 'N/A';
     

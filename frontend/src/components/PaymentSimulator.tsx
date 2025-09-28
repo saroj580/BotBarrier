@@ -16,7 +16,7 @@ import {
   Mail
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getAuth } from "@/lib/auth"; // Import getAuth
+import { getAuth } from "@/lib/auth"; 
 
 interface PaymentSimulation {
   id: string;
